@@ -14,20 +14,26 @@
         value = '+' + value.replace(/^\+/, '');
       }
       
-      // Ограничиваем длину (максимум 15 символов включая плюс)
-      if (value.length > 15) {
-        value = value.substring(0, 15);
+      // Ограничиваем длину - только + и 11 цифр
+      if (value.length > 12) {
+        value = value.substring(0, 12);
+      }
+      
+      // Удаляем лишние цифры после 11
+      const digitsAfterPlus = value.substring(1).replace(/\D/g, '');
+      if (digitsAfterPlus.length > 11) {
+        value = '+' + digitsAfterPlus.substring(0, 11);
       }
       
       input.value = value;
     }
 
     function validatePhoneNumber(input) {
-      const phoneRegex = /^\+\d{1,14}$/;
+      const phoneRegex = /^\+\d{11}$/;
       const isValid = phoneRegex.test(input.value);
       
       if (!isValid && input.value !== '') {
-        input.setCustomValidity('Номер телефона должен быть в формате +XXXXXXXXXXX (только цифры после +)');
+        input.setCustomValidity('Номер телефона должен быть в формате +79123456789 (ровно 11 цифр после +)');
       } else {
         input.setCustomValidity('');
       }
@@ -48,7 +54,17 @@
     document.addEventListener('DOMContentLoaded', function() {
       const phoneInput = document.querySelector('input[name="phone_number"]');
       if (phoneInput && phoneInput.value) {
-        formatPhoneNumber(phoneInput);
+        // Приводим существующий номер к правильному формату
+        let currentValue = phoneInput.value;
+        // Оставляем только цифры
+        const digitsOnly = currentValue.replace(/\D/g, '');
+        // Берем только первые 11 цифр и добавляем +
+        if (digitsOnly.length > 11) {
+          phoneInput.value = '+' + digitsOnly.substring(0, 11);
+        } else if (digitsOnly.length === 11) {
+          phoneInput.value = '+' + digitsOnly;
+        }
+        // Если меньше 11 цифр, оставляем как есть - валидация покажет ошибку
       }
     });
   </script>
@@ -67,14 +83,14 @@
         type="text" 
         name="phone_number" 
         value="<%= client.phone_number %>"
-        placeholder="+79991234567"
+        placeholder="+79123456789"
         oninput="formatPhoneNumber(this)"
         onblur="validatePhoneNumber(this)"
-        pattern="^\+\d{1,14}$"
-        title="Номер телефона должен быть в формате +XXXXXXXXXXX (только цифры после +)"
+        pattern="^\+\d{11}$"
+        title="Номер телефона должен быть в формате +79123456789 (ровно 11 цифр после +)"
         required
       >
-      <div class="form-text">Формат: +XXXXXXXXXXX (только цифры после знака +)</div>
+      <div class="form-text">Формат: +79123456789 (ровно 11 цифр после знака +)</div>
     </div>
     <div class="mb-3">
       <label class="form-label">Статус:</label>
