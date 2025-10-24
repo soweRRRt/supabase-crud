@@ -49,6 +49,19 @@
     function resetFilters() {
       window.location.href = '/clients';
     }
+
+    function getColumnDisplayName(column) {
+      const names = {
+        'full_name': 'ФИО',
+        'phone_number': 'Номер телефона', 
+        'status': 'Статус'
+      };
+      return names[column] || column;
+    }
+
+    function getSortDirectionText(order) {
+      return order === 'desc' ? 'убыванию' : 'возрастанию';
+    }
   </script>
 </head>
 <body class="container py-5">
@@ -116,9 +129,6 @@
     <table class="table table-bordered">
       <thead class="table-light">
         <tr>
-          <!-- <th style="cursor: pointer;" onclick="sortTable('id')">
-            ID <script>document.write(getSortIcon('id'))</script>
-          </th> -->
           <th style="cursor: pointer;" onclick="sortTable('full_name')">
             ФИО <script>document.write(getSortIcon('full_name'))</script>
           </th>
@@ -134,13 +144,12 @@
       <tbody>
         <% if (clients.length === 0) { %>
           <tr>
-            <td colspan="5" class="text-center text-muted">Клиенты не найдены</td>
+            <td colspan="4" class="text-center text-muted">Клиенты не найдены</td>
           </tr>
         <% } %>
         
         <% clients.forEach(c => { %>
           <tr>
-            <!-- <td><%= c.id %></td> -->
             <td><%= c.full_name %></td>
             <td><%= c.phone_number %></td>
             <td><%= c.client_status ? c.client_status.name : 'Не указан' %></td>
@@ -167,7 +176,13 @@
           <% if (statusObj) { %> | Статус: <%= statusObj.name %> <% } %>
         <% } %>
         <% if (filters.phone) { %> | Телефон: "<%= filters.phone %>" <% } %>
-        <% if (filters.sort_by) { %> | Сортировка: <%= filters.sort_by %> (<%= filters.sort_order === 'desc' ? 'DESC' : 'ASC' %>) <% } %>
+        <% if (filters.sort_by) { %> 
+          | Сортировка по: 
+          <script>
+            document.write(getColumnDisplayName('<%= filters.sort_by %>'));
+            document.write(' (' + ('<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>') + ')');
+          </script>
+        <% } %>
       </small>
     </div>
   <% } %>
