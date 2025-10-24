@@ -25,21 +25,71 @@ app.get('/', (req, res) => {
 // app.get('/clients', async (req, res) => {
 //   const { data: clients, error } = await supabase
 //     .from('clients')
-//     .select('*')
+//     .select(`
+//       *,
+//       client_status:status_id (name)
+//     `)
 //     .order('id');
 //   if (error) return res.send(error.message);
 //   res.render('clients/index', { clients });
 // });
+// READ - список клиентов с фильтрацией и сортировкой
 app.get('/clients', async (req, res) => {
-  const { data: clients, error } = await supabase
+  let { search, status, phone, sort_by, sort_order } = req.query;
+  
+  let query = supabase
     .from('clients')
     .select(`
       *,
       client_status:status_id (name)
-    `)
-    .order('id');
+    `);
+
+  // Фильтрация по ФИО (like)
+  if (search && search.trim() !== '') {
+    query = query.ilike('full_name', `%${search.trim()}%`);
+  }
+
+  // Фильтрация по статусу
+  if (status && status !== 'all') {
+    query = query.eq('status_id', status);
+  }
+
+  // Фильтрация по номеру телефона (like)
+  if (phone && phone.trim() !== '') {
+    query = query.ilike('phone_number', `%${phone.trim()}%`);
+  }
+
+  // Сортировка
+  if (sort_by) {
+    // Определяем порядок сортировки
+    const order = sort_order === 'desc' ? false : true;
+    
+    // Для связанных таблиц используем специальный синтаксис
+    if (sort_by === 'status') {
+      query = query.order('client_status(name)', { ascending: order });
+    } else {
+      query = query.order(sort_by, { ascending: order });
+    }
+  } else {
+    // Сортировка по умолчанию
+    query = query.order('id');
+  }
+
+  const { data: clients, error } = await query;
   if (error) return res.send(error.message);
-  res.render('clients/index', { clients });
+
+  // Получаем статусы для фильтра
+  const { data: statuses, error: statusError } = await supabase
+    .from('client_status')
+    .select('*')
+    .order('id');
+  if (statusError) return res.send(statusError.message);
+
+  res.render('clients/index', { 
+    clients, 
+    statuses,
+    filters: { search, status, phone, sort_by, sort_order }
+  });
 });
 
 // CREATE - форма
