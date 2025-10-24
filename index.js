@@ -22,10 +22,21 @@ app.get('/', (req, res) => {
 });
 
 // READ - список клиентов
+// app.get('/clients', async (req, res) => {
+//   const { data: clients, error } = await supabase
+//     .from('clients')
+//     .select('*')
+//     .order('id');
+//   if (error) return res.send(error.message);
+//   res.render('clients/index', { clients });
+// });
 app.get('/clients', async (req, res) => {
   const { data: clients, error } = await supabase
     .from('clients')
-    .select('*')
+    .select(`
+      *,
+      client_status:status_id (name)
+    `)
     .order('id');
   if (error) return res.send(error.message);
   res.render('clients/index', { clients });
