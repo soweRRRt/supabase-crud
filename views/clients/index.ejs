@@ -1,75 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Справочник клиентов</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script>
-    function confirmDelete(form) {
-      if (confirm('Подтвердите удаление клиента из базы')) {
-        form.submit();
-      }
-    }
+<%- include('../partials/header', { title: "Клиенты", user }) %>
 
-    function sortTable(column) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const currentSort = urlParams.get('sort_by');
-      const currentOrder = urlParams.get('sort_order');
-      
-      let newOrder = 'asc';
-      
-      if (currentSort === column) {
-        if (currentOrder === 'asc') {
-          newOrder = 'desc';
-        } else if (currentOrder === 'desc') {
-          // Сбрасываем сортировку
-          urlParams.delete('sort_by');
-          urlParams.delete('sort_order');
-          window.location.search = urlParams.toString();
-          return;
-        }
-      }
-      
-      urlParams.set('sort_by', column);
-      urlParams.set('sort_order', newOrder);
-      window.location.search = urlParams.toString();
-    }
-
-    function getSortIcon(column) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const currentSort = urlParams.get('sort_by');
-      const currentOrder = urlParams.get('sort_order');
-      
-      if (currentSort === column) {
-        return currentOrder === 'asc' ? '↑' : '↓';
-      }
-      return '';
-    }
-
-    function resetFilters() {
-      window.location.href = '/clients';
-    }
-
-    function getColumnDisplayName(column) {
-      const names = {
-        'full_name': 'ФИО',
-        'phone_number': 'Номер телефона', 
-        'status': 'Статус'
-      };
-      return names[column] || column;
-    }
-
-    function getSortDirectionText(order) {
-      return order === 'desc' ? 'убыванию' : 'возрастанию';
-    }
-  </script>
-</head>
-<body class="container py-5">
+<div class="container py-5">
   <h1 class="mb-4">Клиенты</h1>
-  
+
   <!-- Форма фильтров -->
-  <div class="card mb-4">
-    <div class="card-header">
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
       <h5 class="mb-0">Фильтры поиска</h5>
     </div>
     <div class="card-body">
@@ -85,7 +21,7 @@
             placeholder="Введите ФИО..."
           >
         </div>
-        
+
         <div class="col-md-3">
           <label for="status" class="form-label">Статус</label>
           <select class="form-select" id="status" name="status">
@@ -93,14 +29,13 @@
             <% statuses.forEach(s => { %>
               <option 
                 value="<%= s.id %>" 
-                <%= filters.status == s.id ? 'selected' : '' %>
-              >
+                <%= filters.status == s.id ? 'selected' : '' %>>
                 <%= s.name %>
               </option>
             <% }) %>
           </select>
         </div>
-        
+
         <div class="col-md-3">
           <label for="phone" class="form-label">Номер телефона</label>
           <input 
@@ -112,7 +47,7 @@
             placeholder="Введите номер..."
           >
         </div>
-        
+
         <div class="col-md-2 d-flex align-items-end">
           <div class="btn-group w-100">
             <button type="submit" class="btn btn-primary">Поиск</button>
@@ -123,68 +58,54 @@
     </div>
   </div>
 
-  <a class="btn btn-primary mb-3" href="/clients/new">Добавить нового клиента</a>
-  
-  <div class="table-responsive">
-    <table class="table table-bordered">
+  <a class="btn btn-success mb-3" href="/clients/new">Добавить нового клиента</a>
+
+  <div class="table-responsive shadow-sm">
+    <table class="table table-bordered align-middle">
       <thead class="table-light">
         <tr>
-          <th style="cursor: pointer;" onclick="sortTable('full_name')">
-            ФИО <script>document.write(getSortIcon('full_name'))</script>
-          </th>
-          <th style="cursor: pointer;" onclick="sortTable('phone_number')">
-            Номер телефона <script>document.write(getSortIcon('phone_number'))</script>
-          </th>
-          <th style="cursor: pointer;" onclick="sortTable('status')">
-            Статус <script>document.write(getSortIcon('status'))</script>
-          </th>
+          <th onclick="sortTable('full_name')" style="cursor:pointer;">ФИО <script>document.write(getSortIcon('full_name'))</script></th>
+          <th onclick="sortTable('phone_number')" style="cursor:pointer;">Номер телефона <script>document.write(getSortIcon('phone_number'))</script></th>
+          <th onclick="sortTable('status')" style="cursor:pointer;">Статус <script>document.write(getSortIcon('status'))</script></th>
           <th>Действия</th>
         </tr>
       </thead>
       <tbody>
         <% if (clients.length === 0) { %>
-          <tr>
-            <td colspan="4" class="text-center text-muted">Клиенты не найдены</td>
-          </tr>
+          <tr><td colspan="4" class="text-center text-muted">Клиенты не найдены</td></tr>
+        <% } else { %>
+          <% clients.forEach(c => { %>
+            <tr>
+              <td><%= c.full_name %></td>
+              <td><%= c.phone_number %></td>
+              <td><%= c.client_status ? c.client_status.name : 'Не указан' %></td>
+              <td>
+                <a class="btn btn-sm btn-warning" href="/clients/<%= c.id %>/edit">Изменить</a>
+                <form action="/clients/<%= c.id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="event.preventDefault(); confirmDelete(this);">
+                  <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
         <% } %>
-        
-        <% clients.forEach(c => { %>
-          <tr>
-            <td><%= c.full_name %></td>
-            <td><%= c.phone_number %></td>
-            <td><%= c.client_status ? c.client_status.name : 'Не указан' %></td>
-            <td>
-              <a class="btn btn-sm btn-warning" href="/clients/<%= c.id %>/edit">Изменить</a>
-              <form action="/clients/<%= c.id %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="event.preventDefault(); confirmDelete(this);">
-                <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
       </tbody>
     </table>
   </div>
 
-  <!-- Отображение активных фильтров -->
   <% if (filters.search || filters.status || filters.phone || filters.sort_by) { %>
     <div class="mt-3">
       <small class="text-muted">
-        Активные фильтры: 
+        Активные фильтры:
         <% if (filters.search) { %> ФИО: "<%= filters.search %>" <% } %>
         <% if (filters.status && filters.status !== 'all') { %> 
           <% const statusObj = statuses.find(s => s.id == filters.status); %>
           <% if (statusObj) { %> | Статус: <%= statusObj.name %> <% } %>
         <% } %>
         <% if (filters.phone) { %> | Телефон: "<%= filters.phone %>" <% } %>
-        <% if (filters.sort_by) { %> 
-          | Сортировка по: 
-          <script>
-            document.write(getColumnDisplayName('<%= filters.sort_by %>'));
-            document.write(' (' + ('<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>') + ')');
-          </script>
-        <% } %>
+        <% if (filters.sort_by) { %> | Сортировка по: <%= filters.sort_by %> (<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>) <% } %>
       </small>
     </div>
   <% } %>
-</body>
-</html>
+</div>
+
+<%- include('../partials/footer') %>

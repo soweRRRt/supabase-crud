@@ -1,108 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Изменение клиента</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script>
-    function formatPhoneNumber(input) {
-      // Удаляем все нецифровые символы кроме плюса
-      let value = input.value.replace(/[^\d+]/g, '');
-      
-      // Если нет плюса в начале - добавляем
-      if (!value.startsWith('+')) {
-        value = '+' + value.replace(/^\+/, '');
-      }
-      
-      // Ограничиваем длину - только + и 11 цифр
-      if (value.length > 12) {
-        value = value.substring(0, 12);
-      }
-      
-      // Удаляем лишние цифры после 11
-      const digitsAfterPlus = value.substring(1).replace(/\D/g, '');
-      if (digitsAfterPlus.length > 11) {
-        value = '+' + digitsAfterPlus.substring(0, 11);
-      }
-      
-      input.value = value;
-    }
+<%- include('../partials/header', { title: "Редактировать клиента", user }) %>
 
-    function validatePhoneNumber(input) {
-      const phoneRegex = /^\+\d{11}$/;
-      const isValid = phoneRegex.test(input.value);
-      
-      if (!isValid && input.value !== '') {
-        input.setCustomValidity('Номер телефона должен быть в формате +79123456789 (ровно 11 цифр после +)');
-      } else {
-        input.setCustomValidity('');
-      }
-    }
+<div class="container py-5">
+  <h1 class="mb-4">Редактирование клиента</h1>
 
-    function validateForm(event) {
-      const phoneInput = document.querySelector('input[name="phone_number"]');
-      validatePhoneNumber(phoneInput);
-      
-      if (!phoneInput.validity.valid) {
-        event.preventDefault();
-        return false;
-      }
-      return true;
-    }
-
-    // Форматируем существующий номер при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-      const phoneInput = document.querySelector('input[name="phone_number"]');
-      if (phoneInput && phoneInput.value) {
-        // Приводим существующий номер к правильному формату
-        let currentValue = phoneInput.value;
-        // Оставляем только цифры
-        const digitsOnly = currentValue.replace(/\D/g, '');
-        // Берем только первые 11 цифр и добавляем +
-        if (digitsOnly.length > 11) {
-          phoneInput.value = '+' + digitsOnly.substring(0, 11);
-        } else if (digitsOnly.length === 11) {
-          phoneInput.value = '+' + digitsOnly;
-        }
-        // Если меньше 11 цифр, оставляем как есть - валидация покажет ошибку
-      }
-    });
-  </script>
-</head>
-<body class="container py-5">
-  <h1 class="mb-4">Изменить</h1>
-  <form action="/clients/<%= client.id %>?_method=PUT" method="POST" class="mb-3" onsubmit="return validateForm(event)">
+  <form action="/clients/<%= client.id %>?_method=PUT" method="POST" class="card p-4 shadow-sm" onsubmit="return validateForm(event)">
     <div class="mb-3">
       <label class="form-label">ФИО:</label>
       <input class="form-control" type="text" name="full_name" value="<%= client.full_name %>" required>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Номер телефона:</label>
-      <input 
-        class="form-control" 
-        type="text" 
-        name="phone_number" 
-        value="<%= client.phone_number %>"
-        placeholder="+79123456789"
-        oninput="formatPhoneNumber(this)"
-        onblur="validatePhoneNumber(this)"
-        pattern="^\+\d{11}$"
-        title="Номер телефона должен быть в формате +79123456789 (ровно 11 цифр после +)"
-        required
-      >
+      <input class="form-control" type="text" name="phone_number" value="<%= client.phone_number %>"
+             placeholder="+79123456789"
+             oninput="formatPhoneNumber(this)"
+             onblur="validatePhoneNumber(this)"
+             pattern="^\\+\\d{11}$"
+             required>
       <div class="form-text">Формат: +79123456789 (ровно 11 цифр после знака +)</div>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Статус:</label>
       <select class="form-select" name="status_id" required>
-        <option value="">Выбор статуса</option>
+        <option value="">Выберите статус</option>
         <% statuses.forEach(s => { %>
           <option value="<%= s.id %>" <%= s.id === client.status_id ? 'selected' : '' %>><%= s.name %></option>
         <% }) %>
       </select>
     </div>
-    <button class="btn btn-primary" type="submit">Сохранить</button>
-    <a class="btn btn-secondary" href="/clients">Отмена</a>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-primary me-2" type="submit">Сохранить</button>
+      <a class="btn btn-secondary" href="/clients">Отмена</a>
+    </div>
   </form>
-</body>
-</html>
+</div>
+
+<%- include('../partials/footer') %>
