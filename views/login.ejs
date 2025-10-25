@@ -1,29 +1,25 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Вход</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <header>
-    <nav class="navbar">
-      <div class="logo"><a href="/">Supabase CRUD</a></div>
-    </nav>
-  </header>
+<%- include('partials/header', { title: "Вход", user }) %>
 
-  <main>
-    <h2>Вход</h2>
-    <form action="/login" method="POST" class="auth-form">
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="text-center mb-4">Войти</h2>
 
-      <label for="password">Пароль:</label>
-      <input type="password" id="password" name="password" required>
+  <form action="/login" method="POST" class="card p-4 shadow-sm">
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" id="email" name="email" class="form-control" placeholder="Введите email" required>
+    </div>
 
-      <button type="submit">Войти</button>
-    </form>
-  </main>
-</body>
-</html>
+    <div class="mb-3">
+      <label for="password" class="form-label">Пароль:</label>
+      <input type="password" id="password" name="password" class="form-control" placeholder="Введите пароль" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Войти</button>
+
+    <div class="text-center mt-3">
+      <small>Нет аккаунта? <a href="/register">Зарегистрироваться</a></small>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

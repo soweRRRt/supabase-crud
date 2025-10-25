@@ -1,32 +1,30 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Регистрация</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <header>
-    <nav class="navbar">
-      <div class="logo"><a href="/">Supabase CRUD</a></div>
-    </nav>
-  </header>
+<%- include('partials/header', { title: "Регистрация", user }) %>
 
-  <main>
-    <h2>Регистрация</h2>
-    <form action="/register" method="POST" class="auth-form">
-      <label for="username">Имя пользователя:</label>
-      <input type="text" id="username" name="username" required>
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="text-center mb-4">Регистрация</h2>
 
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
+  <form action="/register" method="POST" class="card p-4 shadow-sm">
+    <div class="mb-3">
+      <label for="username" class="form-label">Имя пользователя:</label>
+      <input type="text" id="username" name="username" class="form-control" placeholder="Введите имя" required>
+    </div>
 
-      <label for="password">Пароль:</label>
-      <input type="password" id="password" name="password" required>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" id="email" name="email" class="form-control" placeholder="Введите email" required>
+    </div>
 
-      <button type="submit">Зарегистрироваться</button>
-    </form>
-  </main>
-</body>
-</html>
+    <div class="mb-3">
+      <label for="password" class="form-label">Пароль:</label>
+      <input type="password" id="password" name="password" class="form-control" placeholder="Введите пароль" required>
+    </div>
+
+    <button type="submit" class="btn btn-success w-100">Создать аккаунт</button>
+
+    <div class="text-center mt-3">
+      <small>Уже есть аккаунт? <a href="/login">Войти</a></small>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>
