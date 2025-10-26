@@ -174,15 +174,42 @@ app.get('/clients', requireAuth, async (req, res) => {
 // DETAIL
 app.get('/clients/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { data: client, error } = await supabase
-    .from('clients')
-    .select(`*, client_status:status_id (name)`)
-    .eq('id', id)
-    .single();
-  if (error) return res.send(error.message);
 
-  res.render('clients/show', { client, user: req.session.user || null });
+  try {
+    // получаем данные клиента
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (clientError) {
+      console.error('Ошибка при получении клиента:', clientError);
+      return res.status(404).send('Клиент не найден');
+    }
+
+    // получаем статус клиента
+    let client_status = null;
+    if (client.status_id) {
+      const { data: statusData } = await supabase
+        .from('client_status')
+        .select('name')
+        .eq('id', client.status_id)
+        .single();
+      client_status = statusData;
+    }
+
+    res.render('clients/show', { 
+      client: { ...client, client_status }, 
+      user: req.session.user || null 
+    });
+
+  } catch (err) {
+    console.error('Ошибка на сервере:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
+
 
 // CREATE
 app.get('/clients/new', requireAuth, async (req, res) => {
