@@ -12,14 +12,7 @@
       <form method="GET" action="/clients" class="row g-3">
         <div class="col-md-4">
           <label for="search" class="form-label">ФИО</label>
-          <input 
-            type="text" 
-            class="form-control" 
-            id="search" 
-            name="search" 
-            value="<%= filters.search || '' %>"
-            placeholder="Введите ФИО..."
-          >
+          <input type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Введите ФИО...">
         </div>
 
         <div class="col-md-3">
@@ -27,25 +20,14 @@
           <select class="form-select" id="status" name="status">
             <option value="all">Все статусы</option>
             <% statuses.forEach(s => { %>
-              <option 
-                value="<%= s.id %>" 
-                <%= filters.status == s.id ? 'selected' : '' %>>
-                <%= s.name %>
-              </option>
+              <option value="<%= s.id %>" <%= filters.status == s.id ? 'selected' : '' %>><%= s.name %></option>
             <% }) %>
           </select>
         </div>
 
         <div class="col-md-3">
           <label for="phone" class="form-label">Номер телефона</label>
-          <input 
-            type="text" 
-            class="form-control" 
-            id="phone" 
-            name="phone" 
-            value="<%= filters.phone || '' %>"
-            placeholder="Введите номер..."
-          >
+          <input type="text" class="form-control" id="phone" name="phone" value="<%= filters.phone || '' %>" placeholder="Введите номер...">
         </div>
 
         <div class="col-md-2 d-flex align-items-end">
@@ -150,8 +132,8 @@
 function exportToExcel() {
   const table = document.getElementById("clientsTable");
   const wb = XLSX.utils.book_new();
-  
-  // Создаем массив данных вручную, исключая кнопку "Действия"
+
+  // Собираем данные
   const wsData = [["ФИО", "Номер телефона", "Статус"]];
   const rows = table.querySelectorAll("tbody tr");
 
@@ -167,6 +149,18 @@ function exportToExcel() {
   });
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Автоширина столбцов
+  const colWidths = wsData[0].map((_, colIndex) => {
+    let maxLength = 10; // минимальная ширина
+    wsData.forEach(row => {
+      const cellValue = row[colIndex] ? row[colIndex].toString() : '';
+      if (cellValue.length > maxLength) maxLength = cellValue.length;
+    });
+    return { wch: maxLength + 2 }; // немного отступа
+  });
+  ws['!cols'] = colWidths;
+
   XLSX.utils.book_append_sheet(wb, ws, "Клиенты");
   XLSX.writeFile(wb, "clients.xlsx");
 }
