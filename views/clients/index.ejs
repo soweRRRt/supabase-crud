@@ -64,12 +64,12 @@
   </div>
 
   <div class="table-responsive shadow-sm">
-    <table class="table table-bordered align-middle">
+    <table id="clientsTable" class="table table-bordered align-middle">
       <thead class="table-light">
         <tr>
-          <th onclick="sortTable('full_name')" style="cursor:pointer;">ФИО <script>document.write(getSortIcon('full_name'))</script></th>
-          <th onclick="sortTable('phone_number')" style="cursor:pointer;">Номер телефона <script>document.write(getSortIcon('phone_number'))</script></th>
-          <th onclick="sortTable('status')" style="cursor:pointer;">Статус <script>document.write(getSortIcon('status'))</script></th>
+          <th onclick="sortTable('full_name')" style="cursor:pointer;">ФИО <span id="sortIcon_full_name"></span></th>
+          <th onclick="sortTable('phone_number')" style="cursor:pointer;">Номер телефона <span id="sortIcon_phone_number"></span></th>
+          <th onclick="sortTable('status')" style="cursor:pointer;">Статус <span id="sortIcon_status"></span></th>
           <th>Действия</th>
         </tr>
       </thead>
@@ -148,8 +148,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function exportToExcel() {
-  const table = document.querySelector("table");
-  const wb = XLSX.utils.table_to_book(table, { sheet: "Клиенты" });
+  const table = document.getElementById("clientsTable");
+  const wb = XLSX.utils.book_new();
+  
+  // Создаем массив данных вручную, исключая кнопку "Действия"
+  const wsData = [["ФИО", "Номер телефона", "Статус"]];
+  const rows = table.querySelectorAll("tbody tr");
+
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length >= 3) {
+      wsData.push([
+        cells[0].innerText.trim(),
+        cells[1].innerText.trim(),
+        cells[2].innerText.trim()
+      ]);
+    }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb, ws, "Клиенты");
   XLSX.writeFile(wb, "clients.xlsx");
 }
 
