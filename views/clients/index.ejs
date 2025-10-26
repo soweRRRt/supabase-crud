@@ -1,7 +1,7 @@
 <%- include('../partials/header', { title: "Клиенты", user }) %>
 
 <div class="container py-5">
-  <h1 class="mb-4">Клиенты</h1>
+  <h1 class="mb-4">Справочник клиентов</h1>
 
   <!-- Форма фильтров -->
   <div class="card mb-4 shadow-sm">
@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sortBy) {
     const icon = document.getElementById(`sortIcon_${sortBy}`);
     if (icon) {
-      icon.innerHTML = sortOrder === 'asc' ? '⬆️' : '⬇️';
+      icon.innerHTML = sortOrder === 'asc' ? '🡡' : '🡣';
     }
   }
 });
