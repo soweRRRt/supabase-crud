@@ -103,6 +103,11 @@
 
   <!-- Активные фильтры -->
   <% 
+    const sortHeaders = {
+      full_name: 'ФИО',
+      phone_number: 'Номер телефона',
+      status: 'Статус'
+    };
     const hasFilters = 
       (filters.search && filters.search.trim() !== '') ||
       (filters.status && filters.status !== 'all') ||
@@ -120,7 +125,7 @@
           <% if (statusObj) { %> | Статус: <%= statusObj.name %> <% } %>
         <% } %>
         <% if (filters.phone && filters.phone.trim() !== '') { %> | Телефон: "<%= filters.phone %>" <% } %>
-        <% if (filters.sort_by) { %> | Сортировка по: <%= filters.sort_by %> (<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>) <% } %>
+        <% if (filters.sort_by) { %> | Сортировка по: <%= sortHeaders[filters.sort_by] || filters.sort_by %> (<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>) <% } %>
       </small>
     </div>
   <% } %>
@@ -152,12 +157,12 @@ function exportToExcel() {
 
   // Автоширина столбцов
   const colWidths = wsData[0].map((_, colIndex) => {
-    let maxLength = 10;
+    let maxLength = 10; // минимальная ширина
     wsData.forEach(row => {
       const cellValue = row[colIndex] ? row[colIndex].toString() : '';
       if (cellValue.length > maxLength) maxLength = cellValue.length;
     });
-    return { wch: maxLength + 2 };
+    return { wch: maxLength + 2 }; // немного отступа
   });
   ws['!cols'] = colWidths;
 
@@ -165,56 +170,12 @@ function exportToExcel() {
   XLSX.writeFile(wb, "clients.xlsx");
 }
 
+// Сброс фильтров, но сохраняем текущую страницу
 function resetFilters() {
-  window.location.href = '/clients';
-}
-
-// Сортировка по колонкам (серверная)
-function sortTable(column) {
   const urlParams = new URLSearchParams(window.location.search);
-
-  const currentSortBy = urlParams.get('sort_by');
-  const currentSortOrder = urlParams.get('sort_order');
-
-  let newSortOrder = 'asc';
-
-  if (currentSortBy === column) {
-    if (currentSortOrder === 'asc') newSortOrder = 'desc';
-    else if (currentSortOrder === 'desc') newSortOrder = ''; // убрать сортировку
-  }
-
-  if (newSortOrder) {
-    urlParams.set('sort_by', column);
-    urlParams.set('sort_order', newSortOrder);
-  } else {
-    urlParams.delete('sort_by');
-    urlParams.delete('sort_order');
-  }
-
-  // Всегда начинаем с первой страницы при изменении сортировки
-  urlParams.set('page', '1');
-
-  window.location.search = urlParams.toString();
+  const page = urlParams.get('page') || 1;
+  window.location.href = `/clients?page=${page}`;
 }
-
-function getSortIcon(column) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const sortBy = urlParams.get('sort_by');
-  const sortOrder = urlParams.get('sort_order');
-
-  if (sortBy === column) {
-    if (sortOrder === 'asc') return '▲';
-    if (sortOrder === 'desc') return '▼';
-  }
-  return '';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  ['full_name','phone_number','status'].forEach(col => {
-    const iconSpan = document.getElementById('sortIcon_' + col);
-    if (iconSpan) iconSpan.innerText = getSortIcon(col);
-  });
-});
 </script>
 
 <%- include('../partials/footer') %>
