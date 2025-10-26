@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import bcrypt from 'bcrypt';
+import XLSX from 'xlsx';
 
 dotenv.config();
 
@@ -176,7 +177,6 @@ app.get('/clients/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
-    // получаем данные клиента
     const { data: client, error: clientError } = await supabase
       .from('clients')
       .select('*')
@@ -188,7 +188,6 @@ app.get('/clients/:id', requireAuth, async (req, res) => {
       return res.status(404).send('Клиент не найден');
     }
 
-    // получаем статус клиента
     let client_status = null;
     if (client.status_id) {
       const { data: statusData } = await supabase
@@ -209,7 +208,6 @@ app.get('/clients/:id', requireAuth, async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
-
 
 // CREATE
 app.get('/clients/new', requireAuth, async (req, res) => {
@@ -263,6 +261,63 @@ app.delete('/clients/:id', requireAuth, async (req, res) => {
   const { error } = await supabase.from('clients').delete().eq('id', id);
   if (error) return res.send(error.message);
   res.redirect('/clients');
+});
+
+// ========================
+// 🔹 EXPORT TO EXCEL
+// ========================
+app.get('/clients/export', requireAuth, async (req, res) => {
+  let { search, status, phone, sort_by, sort_order } = req.query;
+
+  let query = supabase
+    .from('clients')
+    .select(`
+      full_name,
+      phone_number,
+      client_status:status_id (name)
+    `);
+
+  if (search && search.trim() !== '') query = query.ilike('full_name', `%${search.trim()}%`);
+  if (status && status !== 'all') query = query.eq('status_id', status);
+  if (phone && phone.trim() !== '') query = query.ilike('phone_number', `%${phone.trim()}%`);
+
+  if (sort_by) {
+    const order = sort_order === 'desc' ? false : true;
+    if (sort_by === 'status') query = query.order('client_status(name)', { ascending: order });
+    else query = query.order(sort_by, { ascending: order });
+  } else query = query.order('id');
+
+  const { data: clients, error } = await query;
+  if (error) return res.status(500).send(error.message);
+
+  const wb = XLSX.utils.book_new();
+  const wsData = [['ФИО', 'Номер телефона', 'Статус']];
+
+  clients.forEach(c => {
+    wsData.push([
+      c.full_name || '',
+      c.phone_number || '',
+      c.client_status ? c.client_status.name : ''
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const colWidths = wsData[0].map((_, colIndex) => {
+    let maxLength = 10;
+    wsData.forEach(row => {
+      const cellValue = row[colIndex] ? row[colIndex].toString() : '';
+      if (cellValue.length > maxLength) maxLength = cellValue.length;
+    });
+    return { wch: maxLength + 2 };
+  });
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Клиенты');
+
+  const fileBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Disposition', 'attachment; filename="clients.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(fileBuffer);
 });
 
 // ========================
