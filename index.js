@@ -171,38 +171,99 @@ app.get('/clients', requireAuth, async (req, res) => {
   });
 });
 
-// ========================
-// 🔹 EXPORT ALL CLIENTS
-// ========================
-app.get('/clients/export', requireAuth, async (req, res) => {
+// DETAIL
+app.get('/clients/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const { search, status, phone, sort_by, sort_order } = req.query;
-
-    let query = supabase
+    // получаем данные клиента
+    const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select(`*, client_status:status_id (name)`);
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (search && search.trim() !== '') query = query.ilike('full_name', `%${search.trim()}%`);
-    if (status && status !== 'all') query = query.eq('status_id', status);
-    if (phone && phone.trim() !== '') query = query.ilike('phone_number', `%${phone.trim()}%`);
+    if (clientError) {
+      console.error('Ошибка при получении клиента:', clientError);
+      return res.status(404).send('Клиент не найден');
+    }
 
-    if (sort_by) {
-      const order = sort_order === 'desc' ? false : true;
-      if (sort_by === 'status') query = query.order('client_status(name)', { ascending: order });
-      else query = query.order(sort_by, { ascending: order });
-    } else query = query.order('id');
+    // получаем статус клиента
+    let client_status = null;
+    if (client.status_id) {
+      const { data: statusData } = await supabase
+        .from('client_status')
+        .select('name')
+        .eq('id', client.status_id)
+        .single();
+      client_status = statusData;
+    }
 
-    const { data: clients, error } = await query;
-    if (error) return res.status(500).send(error.message);
+    res.render('clients/show', { 
+      client: { ...client, client_status }, 
+      user: req.session.user || null 
+    });
 
-    res.json(clients);
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Ошибка при экспорте клиентов.');
+    console.error('Ошибка на сервере:', err);
+    res.status(500).send('Internal Server Error');
   }
 });
 
-// DETAIL, CREATE, UPDATE, DELETE — без изменений (оставляем как в твоём коде)
+
+// CREATE
+app.get('/clients/new', requireAuth, async (req, res) => {
+  const { data: statuses, error } = await supabase.from('client_status').select('*').order('id');
+  if (error) return res.send(error.message);
+  res.render('clients/new', { statuses, user: req.session.user || null });
+});
+
+app.post('/clients', requireAuth, async (req, res) => {
+  const { full_name, phone_number, status_id } = req.body;
+  const { error } = await supabase
+    .from('clients')
+    .insert([{ full_name, phone_number, status_id: status_id || null }]);
+  if (error) return res.send(error.message);
+  res.redirect('/clients');
+});
+
+// UPDATE
+app.get('/clients/:id/edit', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { data: client, error: clientError } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (clientError) return res.send(clientError.message);
+
+  const { data: statuses, error: statusError } = await supabase
+    .from('client_status')
+    .select('*')
+    .order('id');
+  if (statusError) return res.send(statusError.message);
+
+  res.render('clients/edit', { client, statuses, user: req.session.user || null });
+});
+
+app.put('/clients/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { full_name, phone_number, status_id } = req.body;
+  const { error } = await supabase
+    .from('clients')
+    .update({ full_name, phone_number, status_id: status_id || null })
+    .eq('id', id);
+  if (error) return res.send(error.message);
+  res.redirect('/clients');
+});
+
+// DELETE
+app.delete('/clients/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('clients').delete().eq('id', id);
+  if (error) return res.send(error.message);
+  res.redirect('/clients');
+});
 
 // ========================
 // 🔹 ЗАПУСК СЕРВЕРА
