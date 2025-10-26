@@ -157,12 +157,12 @@ function exportToExcel() {
 
   // Автоширина столбцов
   const colWidths = wsData[0].map((_, colIndex) => {
-    let maxLength = 10; // минимальная ширина
+    let maxLength = 10;
     wsData.forEach(row => {
       const cellValue = row[colIndex] ? row[colIndex].toString() : '';
       if (cellValue.length > maxLength) maxLength = cellValue.length;
     });
-    return { wch: maxLength + 2 }; // немного отступа
+    return { wch: maxLength + 2 };
   });
   ws['!cols'] = colWidths;
 
@@ -176,6 +176,39 @@ function resetFilters() {
   const page = urlParams.get('page') || 1;
   window.location.href = `/clients?page=${page}`;
 }
+
+// Сортировка колонок ASC → DESC → none
+function sortTable(column) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentSort = urlParams.get('sort_by');
+  const currentOrder = urlParams.get('sort_order');
+
+  if (currentSort !== column) {
+    urlParams.set('sort_by', column);
+    urlParams.set('sort_order', 'asc');
+  } else if (currentOrder === 'asc') {
+    urlParams.set('sort_order', 'desc');
+  } else if (currentOrder === 'desc') {
+    urlParams.delete('sort_by');
+    urlParams.delete('sort_order');
+  }
+
+  window.location.search = urlParams.toString();
+}
+
+// Отображение иконок сортировки
+document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const sortBy = urlParams.get('sort_by');
+  const sortOrder = urlParams.get('sort_order');
+
+  if (sortBy) {
+    const icon = document.getElementById(`sortIcon_${sortBy}`);
+    if (icon) {
+      icon.innerHTML = sortOrder === 'asc' ? '⬆️' : '⬇️';
+    }
+  }
+});
 </script>
 
 <%- include('../partials/footer') %>
