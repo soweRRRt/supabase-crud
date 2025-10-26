@@ -14,10 +14,8 @@
         <div class="col-md-4">
           <label for="search" class="form-label">ФИО</label>
           <div class="input-group">
-            <input list="clientNames" type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Введите ФИО..." autocomplete="off">
-            <% if (filters.search && filters.search.trim() !== '') { %>
-              <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('search').value=''">×</button>
-            <% } %>
+            <input list="clientNames" type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Введите ФИО..." autocomplete="off" oninput="toggleClearButton('searchBtn', this)">
+            <button class="btn btn-outline-secondary" type="button" id="searchBtn" onclick="document.getElementById('search').value=''; toggleClearButton('searchBtn', document.getElementById('search'));">×</button>
           </div>
           <datalist id="clientNames">
             <% clients.forEach(c => { %>
@@ -41,10 +39,8 @@
         <div class="col-md-3">
           <label for="phone" class="form-label">Номер телефона</label>
           <div class="input-group">
-            <input list="clientPhones" type="text" class="form-control" id="phone" name="phone" value="<%= filters.phone || '' %>" placeholder="Введите номер..." autocomplete="off">
-            <% if (filters.phone && filters.phone.trim() !== '') { %>
-              <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('phone').value=''">×</button>
-            <% } %>
+            <input list="clientPhones" type="text" class="form-control" id="phone" name="phone" value="<%= filters.phone || '' %>" placeholder="Введите номер..." autocomplete="off" oninput="toggleClearButton('phoneBtn', this)">
+            <button class="btn btn-outline-secondary" type="button" id="phoneBtn" onclick="document.getElementById('phone').value=''; toggleClearButton('phoneBtn', document.getElementById('phone'));">×</button>
           </div>
           <datalist id="clientPhones">
             <% clients.forEach(c => { %>
@@ -92,11 +88,9 @@
                   <% 
                     let badgeClass = 'bg-secondary';
                     switch(c.client_status.name) {
-                      case 'Новый': badgeClass = 'bg-success'; break;
-                      case 'В обработке': badgeClass = 'bg-primary'; break;
-                      case 'Приостановлен': badgeClass = 'bg-warning'; break;
-                      case 'Завершён': badgeClass = 'bg-secondary'; break;
-                      case 'Отменён': badgeClass = 'bg-danger'; break;
+                      case 'VIP': badgeClass = 'bg-warning'; break;
+                      case 'DEFAULT': badgeClass = 'bg-primary'; break;
+                      case 'BANNED': badgeClass = 'bg-danger'; break;
                     }
                   %>
                   <span class="badge <%= badgeClass %>"><%= c.client_status.name %></span>
@@ -231,7 +225,17 @@ function sortTable(column) {
   window.location.search = urlParams.toString();
 }
 
+// Крестики для очистки полей
+function toggleClearButton(buttonId, inputElement) {
+  const btn = document.getElementById(buttonId);
+  btn.style.display = inputElement.value.trim() === '' ? 'none' : 'block';
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  toggleClearButton('searchBtn', document.getElementById('search'));
+  toggleClearButton('phoneBtn', document.getElementById('phone'));
+
+  // Иконки сортировки
   const urlParams = new URLSearchParams(window.location.search);
   const sortBy = urlParams.get('sort_by');
   const sortOrder = urlParams.get('sort_order');
