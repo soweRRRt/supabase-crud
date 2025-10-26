@@ -1,0 +1,14 @@
+<%- include('../partials/header', { title: "Информация о клиенте", user }) %>
+
+<div class="container py-5">
+  <h2>Информация о клиенте</h2>
+  <table class="table table-bordered">
+    <tr><th>ФИО</th><td><%= client.full_name %></td></tr>
+    <tr><th>Телефон</th><td><%= client.phone_number %></td></tr>
+    <tr><th>Статус</th><td><%= client.client_status ? client.client_status.name : 'Не указан' %></td></tr>
+    <tr><th>ID</th><td><%= client.id %></td></tr>
+  </table>
+  <a href="/clients" class="btn btn-secondary">Назад</a>
+</div>
+
+<%- include('../partials/footer') %>

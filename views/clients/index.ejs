@@ -58,7 +58,10 @@
     </div>
   </div>
 
-  <a class="btn btn-success mb-3" href="/clients/new">Добавить нового клиента</a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="btn btn-success" href="/clients/new">Добавить нового клиента</a>
+    <button class="btn btn-outline-success" onclick="exportToExcel()">📤 Экспорт в Excel</button>
+  </div>
 
   <div class="table-responsive shadow-sm">
     <table class="table table-bordered align-middle">
@@ -80,6 +83,7 @@
               <td><%= c.phone_number %></td>
               <td><%= c.client_status ? c.client_status.name : 'Не указан' %></td>
               <td>
+                <a class="btn btn-sm btn-info text-white" href="/clients/<%= c.id %>">Подробнее</a>
                 <a class="btn btn-sm btn-warning" href="/clients/<%= c.id %>/edit">Изменить</a>
                 <form action="/clients/<%= c.id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="event.preventDefault(); confirmDelete(this);">
                   <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
@@ -90,6 +94,19 @@
         <% } %>
       </tbody>
     </table>
+  </div>
+
+  <!-- Пагинация -->
+  <div class="d-flex justify-content-center mt-3">
+    <nav>
+      <ul class="pagination">
+        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+          <li class="page-item <%= pagination.currentPage === i ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %>&search=<%= filters.search || '' %>&status=<%= filters.status || 'all' %>&phone=<%= filters.phone || '' %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
   </div>
 
   <% if (filters.search || filters.status || filters.phone || filters.sort_by) { %>
@@ -107,5 +124,14 @@
     </div>
   <% } %>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportToExcel() {
+  const table = document.querySelector("table");
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Клиенты" });
+  XLSX.writeFile(wb, "clients.xlsx");
+}
+</script>
 
 <%- include('../partials/footer') %>

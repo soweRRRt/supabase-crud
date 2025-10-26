@@ -57,7 +57,6 @@ app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    // Проверяем, есть ли уже пользователь
     const { data: existingUser } = await supabase
       .from('users')
       .select('*')
@@ -67,18 +66,9 @@ app.post('/register', async (req, res) => {
       return res.status(400).send('Пользователь с таким email или именем уже существует.');
     }
 
-    // Хешируем пароль
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Создаём пользователя
-    const { error } = await supabase.from('users').insert([
-      {
-        username,
-        email,
-        password_hash,
-      },
-    ]);
-
+    const { error } = await supabase.from('users').insert([{ username, email, password_hash }]);
     if (error) throw error;
 
     res.redirect('/login');
@@ -129,51 +119,42 @@ app.post('/login', async (req, res) => {
 // 🔹 ВЫХОД
 // ========================
 app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
+  req.session.destroy(() => res.redirect('/'));
 });
 
 // ========================
-// 🔹 CLIENTS CRUD (ТВОЙ КОД)
+// 🔹 CLIENTS CRUD
 // ========================
 
-// READ - список клиентов
+// READ - список клиентов с пагинацией
 app.get('/clients', requireAuth, async (req, res) => {
-  let { search, status, phone, sort_by, sort_order } = req.query;
+  let { search, status, phone, sort_by, sort_order, page } = req.query;
+  const limit = 50;
+  const currentPage = parseInt(page) || 1;
+  const from = (currentPage - 1) * limit;
+  const to = from + limit - 1;
 
   let query = supabase
     .from('clients')
     .select(`
       *,
       client_status:status_id (name)
-    `);
+    `, { count: 'exact' })
+    .range(from, to);
 
-  if (search && search.trim() !== '') {
-    query = query.ilike('full_name', `%${search.trim()}%`);
-  }
-
-  if (status && status !== 'all') {
-    query = query.eq('status_id', status);
-  }
-
-  if (phone && phone.trim() !== '') {
-    query = query.ilike('phone_number', `%${phone.trim()}%`);
-  }
+  if (search && search.trim() !== '') query = query.ilike('full_name', `%${search.trim()}%`);
+  if (status && status !== 'all') query = query.eq('status_id', status);
+  if (phone && phone.trim() !== '') query = query.ilike('phone_number', `%${phone.trim()}%`);
 
   if (sort_by) {
     const order = sort_order === 'desc' ? false : true;
-    if (sort_by === 'status') {
-      query = query.order('client_status(name)', { ascending: order });
-    } else {
-      query = query.order(sort_by, { ascending: order });
-    }
-  } else {
-    query = query.order('id');
-  }
+    if (sort_by === 'status') query = query.order('client_status(name)', { ascending: order });
+    else query = query.order(sort_by, { ascending: order });
+  } else query = query.order('id');
 
-  const { data: clients, error } = await query;
+  const { data: clients, count, error } = await query;
   if (error) return res.send(error.message);
+  const totalPages = Math.ceil(count / limit);
 
   const { data: statuses, error: statusError } = await supabase
     .from('client_status')
@@ -181,25 +162,35 @@ app.get('/clients', requireAuth, async (req, res) => {
     .order('id');
   if (statusError) return res.send(statusError.message);
 
-  res.render('clients/index', { 
-    clients, 
+  res.render('clients/index', {
+    clients,
     statuses,
     user: req.session.user || null,
-    filters: { search, status, phone, sort_by, sort_order }
+    filters: { search, status, phone, sort_by, sort_order },
+    pagination: { totalPages, currentPage },
   });
 });
 
-// CREATE - форма
+// DETAIL
+app.get('/clients/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { data: client, error } = await supabase
+    .from('clients')
+    .select(`*, client_status:status_id (name)`)
+    .eq('id', id)
+    .single();
+  if (error) return res.send(error.message);
+
+  res.render('clients/show', { client, user: req.session.user || null });
+});
+
+// CREATE
 app.get('/clients/new', requireAuth, async (req, res) => {
-  const { data: statuses, error } = await supabase
-    .from('client_status')
-    .select('*')
-    .order('id');
+  const { data: statuses, error } = await supabase.from('client_status').select('*').order('id');
   if (error) return res.send(error.message);
   res.render('clients/new', { statuses, user: req.session.user || null });
 });
 
-// CREATE - отправка формы
 app.post('/clients', requireAuth, async (req, res) => {
   const { full_name, phone_number, status_id } = req.body;
   const { error } = await supabase
@@ -209,7 +200,7 @@ app.post('/clients', requireAuth, async (req, res) => {
   res.redirect('/clients');
 });
 
-// UPDATE - форма
+// UPDATE
 app.get('/clients/:id/edit', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { data: client, error: clientError } = await supabase
@@ -228,7 +219,6 @@ app.get('/clients/:id/edit', requireAuth, async (req, res) => {
   res.render('clients/edit', { client, statuses, user: req.session.user || null });
 });
 
-// UPDATE - отправка формы
 app.put('/clients/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { full_name, phone_number, status_id } = req.body;
@@ -252,6 +242,4 @@ app.delete('/clients/:id', requireAuth, async (req, res) => {
 // 🔹 ЗАПУСК СЕРВЕРА
 // ========================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
