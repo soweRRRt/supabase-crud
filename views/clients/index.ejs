@@ -10,9 +10,15 @@
     </div>
     <div class="card-body">
       <form method="GET" action="/clients" class="row g-3">
+        <!-- ФИО -->
         <div class="col-md-4">
           <label for="search" class="form-label">ФИО</label>
-          <input list="clientNames" type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Введите ФИО..." autocomplete="off">
+          <div class="input-group">
+            <input list="clientNames" type="text" class="form-control" id="search" name="search" value="<%= filters.search || '' %>" placeholder="Введите ФИО..." autocomplete="off">
+            <% if (filters.search && filters.search.trim() !== '') { %>
+              <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('search').value=''">×</button>
+            <% } %>
+          </div>
           <datalist id="clientNames">
             <% clients.forEach(c => { %>
               <option value="<%= c.full_name %>"></option>
@@ -20,16 +26,7 @@
           </datalist>
         </div>
 
-        <div class="col-md-3">
-          <label for="phone" class="form-label">Номер телефона</label>
-          <input list="clientPhones" type="text" class="form-control" id="phone" name="phone" value="<%= filters.phone || '' %>" placeholder="Введите номер..." autocomplete="off">
-          <datalist id="clientPhones">
-            <% clients.forEach(c => { %>
-              <option value="<%= c.phone_number %>"></option>
-            <% }) %>
-          </datalist>
-        </div>
-
+        <!-- Статус -->
         <div class="col-md-3">
           <label for="status" class="form-label">Статус</label>
           <select class="form-select" id="status" name="status">
@@ -40,6 +37,23 @@
           </select>
         </div>
 
+        <!-- Телефон -->
+        <div class="col-md-3">
+          <label for="phone" class="form-label">Номер телефона</label>
+          <div class="input-group">
+            <input list="clientPhones" type="text" class="form-control" id="phone" name="phone" value="<%= filters.phone || '' %>" placeholder="Введите номер..." autocomplete="off">
+            <% if (filters.phone && filters.phone.trim() !== '') { %>
+              <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('phone').value=''">×</button>
+            <% } %>
+          </div>
+          <datalist id="clientPhones">
+            <% clients.forEach(c => { %>
+              <option value="<%= c.phone_number %>"></option>
+            <% }) %>
+          </datalist>
+        </div>
+
+        <!-- Кнопки -->
         <div class="col-md-2 d-flex align-items-end">
           <div class="btn-group w-100">
             <button type="submit" class="btn btn-primary">Поиск</button>
@@ -76,20 +90,18 @@
               <td>
                 <% if (c.client_status) { %>
                   <% 
-                    let bgColor = '#6c757d'; // серый по умолчанию
-                    switch(c.client_status.id) {
-                      case 1: bgColor = '#28a745'; break; // зеленый
-                      case 2: bgColor = '#ffc107'; break; // желтый
-                      case 3: bgColor = '#dc3545'; break; // красный
+                    let badgeClass = 'bg-secondary';
+                    switch(c.client_status.name) {
+                      case 'Новый': badgeClass = 'bg-success'; break;
+                      case 'В обработке': badgeClass = 'bg-primary'; break;
+                      case 'Приостановлен': badgeClass = 'bg-warning'; break;
+                      case 'Завершён': badgeClass = 'bg-secondary'; break;
+                      case 'Отменён': badgeClass = 'bg-danger'; break;
                     }
                   %>
-                  <span class="badge-status" style="background-color: <%= bgColor %>; color: white; padding: 0.35em 0.6em; border-radius: 0.35rem; display: inline-block;">
-                    <%= c.client_status.name %>
-                  </span>
+                  <span class="badge <%= badgeClass %>"><%= c.client_status.name %></span>
                 <% } else { %>
-                  <span class="badge-status" style="background-color: #6c757d; color: white; padding: 0.35em 0.6em; border-radius: 0.35rem; display: inline-block;">
-                    Не указан
-                  </span>
+                  <span class="badge bg-secondary">Не указан</span>
                 <% } %>
               </td>
               <td>
@@ -181,7 +193,6 @@ function exportToExcel() {
   });
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
-
   const colWidths = wsData[0].map((_, colIndex) => {
     let maxLength = 10;
     wsData.forEach(row => {
