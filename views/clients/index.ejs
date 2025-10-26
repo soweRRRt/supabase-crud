@@ -100,37 +100,61 @@
   <div class="d-flex justify-content-center mt-3">
     <nav>
       <ul class="pagination">
+        <% 
+          const queryParams = [];
+          if (filters.search && filters.search.trim() !== '') queryParams.push(`search=${encodeURIComponent(filters.search)}`);
+          if (filters.status && filters.status !== 'all') queryParams.push(`status=${filters.status}`);
+          if (filters.phone && filters.phone.trim() !== '') queryParams.push(`phone=${encodeURIComponent(filters.phone)}`);
+          if (filters.sort_by) queryParams.push(`sort_by=${filters.sort_by}`);
+          if (filters.sort_order) queryParams.push(`sort_order=${filters.sort_order}`);
+          const baseQuery = queryParams.length > 0 ? '&' + queryParams.join('&') : '';
+        %>
+
         <% for (let i = 1; i <= pagination.totalPages; i++) { %>
           <li class="page-item <%= pagination.currentPage === i ? 'active' : '' %>">
-            <a class="page-link" href="?page=<%= i %>&search=<%= filters.search || '' %>&status=<%= filters.status || 'all' %>&phone=<%= filters.phone || '' %>"><%= i %></a>
+            <a class="page-link" href="?page=<%= i %><%= baseQuery %>"><%= i %></a>
           </li>
         <% } %>
       </ul>
     </nav>
   </div>
 
-  <% if (filters.search || filters.status || filters.phone || filters.sort_by) { %>
+  <!-- Активные фильтры -->
+  <% 
+    const hasFilters = 
+      (filters.search && filters.search.trim() !== '') ||
+      (filters.status && filters.status !== 'all') ||
+      (filters.phone && filters.phone.trim() !== '') ||
+      filters.sort_by;
+  %>
+
+  <% if (hasFilters) { %>
     <div class="mt-3">
       <small class="text-muted">
         Активные фильтры:
-        <% if (filters.search) { %> ФИО: "<%= filters.search %>" <% } %>
+        <% if (filters.search && filters.search.trim() !== '') { %> ФИО: "<%= filters.search %>" <% } %>
         <% if (filters.status && filters.status !== 'all') { %> 
           <% const statusObj = statuses.find(s => s.id == filters.status); %>
           <% if (statusObj) { %> | Статус: <%= statusObj.name %> <% } %>
         <% } %>
-        <% if (filters.phone) { %> | Телефон: "<%= filters.phone %>" <% } %>
+        <% if (filters.phone && filters.phone.trim() !== '') { %> | Телефон: "<%= filters.phone %>" <% } %>
         <% if (filters.sort_by) { %> | Сортировка по: <%= filters.sort_by %> (<%= filters.sort_order === 'desc' ? 'убыванию' : 'возрастанию' %>) <% } %>
       </small>
     </div>
   <% } %>
 </div>
 
+<!-- Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function exportToExcel() {
   const table = document.querySelector("table");
   const wb = XLSX.utils.table_to_book(table, { sheet: "Клиенты" });
   XLSX.writeFile(wb, "clients.xlsx");
+}
+
+function resetFilters() {
+  window.location.href = '/clients';
 }
 </script>
 
